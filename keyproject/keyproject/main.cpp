@@ -40,8 +40,8 @@ int main(int argc,char**argv)
 //		break;		
 //		char argList[][100] = {"a.exe","-code_model","-chck","-logPath","F:\\k\\log.txt","-Key","kKasldfasdadf",
 //			"-desPath","F:\\k\\code","-srcPath","F:\\k\\src"};
-//		char argList[][100] = {"a.exe","-uncode_model","-chek","-logPath","F:\\k\\log.txt","-Key","kKasldfasdadf",
-//			"-desPath","F:\\k\\uncode","-srcPath","F:\\k\\code"};
+		char argList[][100] = {"a.exe","-uncode_model","-chek","-logPath","E:\\k\\log.txt","-Key","kKasldfasdadf",
+			"-desPath","E:\\k\\uncode","-srcPath","E:\\k\\code"};
 //		char argList[][100] = {"a.exe","-destroy_model","-chek","-Key","kKasldfasdadf",
 //			"-srcPath","F:\\k\\uncode"};
 

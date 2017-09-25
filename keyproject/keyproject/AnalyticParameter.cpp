@@ -21,6 +21,14 @@ AnalyticParameter::AnalyticParameter( int argc,char **argv ) :argCount(argc),arg
 			}
 		}
 	}
+	if(findArg("-debug")>=0)
+	{
+		printf("arg list:\n");
+		for (int i = 0 ; i<argCount ; i++)
+		{
+			printf("arg[%d]=%s\n",i,argList[i]);
+		}
+	}
 }
 
 

@@ -189,7 +189,7 @@ uChar DealFileClass::keyData(
 			desIndex += ( keys[keyReveseIndex] + (uSmartSizeType)13 );
 			if (desIndex>=desSize)
 			{
-				if(false==dFiler->getNexSection(File_Data_Cell,true))
+				if(false==desFiler->getNexSection(File_Data_Cell,true))
 				{
 					if (false==desFiler->isOver())
 					{

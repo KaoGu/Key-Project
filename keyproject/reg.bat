@@ -25,10 +25,10 @@ goto menu
 :install
 echo 安装文件夹
 reg add HKEY_CLASSES_ROOT\Folder\shell\cmdkey /ve /t REG_SZ /d "扫街" /f > nul
-reg add HKEY_CLASSES_ROOT\Folder\shell\cmdkey\command /ve /t REG_SZ /d "D:\project\key\keyproject\config.bat \"%%1\"" /f > nul
+reg add HKEY_CLASSES_ROOT\Folder\shell\cmdkey\command /ve /t REG_SZ /d "D:\project\Key-Project\keyproject\config.bat \"%%1\"" /f > nul
 echo 安装文件
 reg add HKEY_CLASSES_ROOT\*\shell\cmdkey /ve /t REG_SZ /d "扫街" /f > nul
-reg add HKEY_CLASSES_ROOT\*\shell\cmdkey\command /ve /t REG_SZ /d "D:\project\key\keyproject\config.bat \"%%1\"" /f > nul
+reg add HKEY_CLASSES_ROOT\*\shell\cmdkey\command /ve /t REG_SZ /d "D:\project\Key-Project\keyproject\config.bat \"%%1\"" /f > nul
 echo 安装完成！
 echo.
 pause

@@ -8,7 +8,7 @@
 
 #define MAX_NEW_NAME_LEN 26
 
-#define IS_TEST 1
+#define IS_TEST 0
 typedef unsigned char uChar;
 
 
