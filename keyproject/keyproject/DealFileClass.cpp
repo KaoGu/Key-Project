@@ -65,16 +65,12 @@ uChar DealFileClass::codeFile(
 			secOffset = secOffset&Smart_Section_Cell_Low_Mask;
 		}
 
-		if(
-			false==MyFileInfo::quickCreateFileBigFile(
-				desPath,
-				secCount>>Smart_Section_Cell_High,
-				(secCount<<Smart_Section_Cell_Low)+secOffset
-			)
-		)
+		errorNum = SmartFiler::makeFile(desPath,secCount,secOffset);
+
+		if(errorNum)
 		{
-			errorNum = 2 + SmartFiler_ErrorNum_Max_OpenFile ;
-			logError("目标文件\"%s\"\n",GetStringAddress(desPath));
+			logError("目标文件\"%s\"创建失败%u\n",GetStringAddress(desPath),errorNum);
+			errorNum += (2 + SmartFiler_ErrorNum_Max_OpenFile) ;
 			break;
 		}
 
@@ -88,7 +84,7 @@ uChar DealFileClass::codeFile(
 		{
 			logError("打开目标文件\"%s\"失败:%u\n",
 				GetStringAddress(desPath),errorNum);
-			errorNum += (3+SmartFiler_ErrorNum_Max_OpenFile);
+			errorNum += (3+SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile);
 			break;
 		}
 		
@@ -99,8 +95,8 @@ uChar DealFileClass::codeFile(
 			)
 			)
 		{
-			errorNum = 4 + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile ;
-			logError("映射目标文件\"%s\"失败\n",GetStringAddress(desPath));
+			errorNum = 4 + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile  + SmartFiler_ErrorNum_Max_MakeFile;
+			logError("映射目标文件\"%s\"开头失败\n",GetStringAddress(desPath));
 			break ;
 		}
 		memcpy(
@@ -114,7 +110,7 @@ uChar DealFileClass::codeFile(
 			);
 		if (errorNum)
 		{
-			errorNum  += (5 + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile) ;
+			errorNum  += (5 + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile) ;
 		}
 	} while (0);
 
@@ -193,7 +189,7 @@ uChar DealFileClass::keyData(
 			desIndex += ( keys[keyReveseIndex] + (uSmartSizeType)13 );
 			if (desIndex>=desSize)
 			{
-				if(false==desFiler->getNexSection(File_Data_Cell,true))
+				if(false==dFiler->getNexSection(File_Data_Cell,true))
 				{
 					if (false==desFiler->isOver())
 					{
@@ -275,17 +271,10 @@ uChar DealFileClass::unCodeFile( SmartFiler * srcSmartFiler , std::string desPat
 		}
 
 		
-
-		if(
-			false==MyFileInfo::quickCreateFileBigFile(
-			desPath,
-			desSecCount>>Smart_Section_Cell_High,
-			(desSecCount<<Smart_Section_Cell_Low)+desSecOffset
-			)
-			)
+		errorNum = SmartFiler::makeFile(desPath,desSecCount,desSecOffset);
+		if(errorNum)
 		{
-			errorNum = 1 ;
-			logError("目标文件\"%s\"创建失败\n",GetStringAddress(desPath));
+			logError("目标文件\"%s\"创建失败%u\n",GetStringAddress(desPath),errorNum);
 			break;
 		}
 
@@ -294,7 +283,7 @@ uChar DealFileClass::unCodeFile( SmartFiler * srcSmartFiler , std::string desPat
 		if (errorNum)
 		{
 			logError("打开目标文件\"%s\"失败:%u\n",GetStringAddress(desPath),errorNum);
-			errorNum += 1;
+			errorNum += (1 + SmartFiler_ErrorNum_Max_MakeFile);
 			break;
 		}
 
@@ -304,7 +293,7 @@ uChar DealFileClass::unCodeFile( SmartFiler * srcSmartFiler , std::string desPat
 
 		if (errorNum)
 		{
-			errorNum += (3+SmartFiler_ErrorNum_Max_OpenFile);
+			errorNum += (3+SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile);
 		}
 
 	} while (0);

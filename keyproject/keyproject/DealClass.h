@@ -15,7 +15,6 @@ using namespace std;
 #define Deal_ErrorNum_Max_UnCodeFile ( 7 + SmartFiler_ErrorNum_Max_OpenFile + DealFile_ErrorNum_Max_UnCodeFile )
 
 
-
 class DealClass
 {
 public:
@@ -25,7 +24,7 @@ public:
 	int dealFilesInSamePath(std::string iterSrcPath);
 	int dealFilesInNewPath(std::string iterSrcPath,std::string iterDesPath);
 	
-
+	uChar fillFolder(string folderPath);
 	uChar unCodeFile(	string srcFilePath,
 		PathStruct* desFolderPath
 		);
@@ -49,7 +48,7 @@ private:
 	bool isDestroyFile;
 	bool isRenameFile;
 	bool isRenameFolder;
-	bool isToNewPath;
+	bool isCheck;
 };
 
 

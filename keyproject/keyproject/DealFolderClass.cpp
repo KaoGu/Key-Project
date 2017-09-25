@@ -34,17 +34,11 @@ uChar DealFolderClass::codeFoder( std::string markFilePath,std::string folderNam
 
 //		string markFilePathWithName = markFilePath + "a";
 		string markFilePathWithName = markFilePath + "a";
-		if (
-			false==MyFileInfo::quickCreateFileBigFile(
-			markFilePathWithName,0,
-//			0x01100008
-			tailerObj->getByteSize()
-			)
-			)
+		errorNum = SmartFiler::makeFile(markFilePathWithName,0,tailerObj->getByteSize());
+		if (errorNum)
 		{
-			logError("创建标志文件\"%s\"失败\n",
-				GetStringAddress(markFilePathWithName));
-			errorNum = 1 ;
+			logError("创建标志文件\"%s\"失败%u\n",
+				GetStringAddress(markFilePathWithName),errorNum);
 			break;
 		}
 		SmartFiler smartFiler;
@@ -53,16 +47,16 @@ uChar DealFolderClass::codeFoder( std::string markFilePath,std::string folderNam
 		errorNum = smartFiler.openFile(markFilePathWithName,Smart_Write_Flag);
 		if (errorNum)
 		{
-			logError("打开标志文件\"%s\"失败\n",
-				GetStringAddress(markFilePathWithName));
-			errorNum++;
+			logError("打开标志文件\"%s\"失败%u\n",
+				GetStringAddress(markFilePathWithName),errorNum);
+			errorNum += (1 + SmartFiler_ErrorNum_Max_MakeFile);
 			break;
 		}
 		if (false==smartFiler.getNexSection(tailerObj->getByteSize(),false))
 		{
 			logError("映射标志文件\"%s\"失败\n",
 				GetStringAddress(markFilePathWithName));
-			errorNum = 2 + SmartFiler_ErrorNum_Max_OpenFile ;
+			errorNum = 2 + SmartFiler_ErrorNum_Max_OpenFile  + SmartFiler_ErrorNum_Max_MakeFile;
 			break;
 		}
 		memcpy(smartFiler.getSectionAddress(),tailerObj->getByteAddress(),smartFiler.getSectionSize());

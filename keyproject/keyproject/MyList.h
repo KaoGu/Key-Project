@@ -26,6 +26,25 @@ public:
 	{
 		return (beginNode==NULL);
 	}
+
+	template<class TList>
+	void pushBackList(TList &tList)
+	{
+		if (NULL==tList.beginNode)
+		{
+			return;
+		}
+		if (NULL==this->beginNode)
+		{
+			this->beginNode = tList.beginNode;
+		}
+		else
+		{
+			this->endNode->next = tList.beginNode;
+		}
+		this->endNode = tList.endNode;
+		tList.beginNode = NULL ;
+	}
 	void pushBackNode(T* node)
 	{
 #if Life_Tag

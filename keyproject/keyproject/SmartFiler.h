@@ -16,10 +16,27 @@
 #define Smart_Write_Flag 2
 
 #define SmartFiler_ErrorNum_Max_OpenFile 3
+#define SmartFiler_ErrorNum_Max_MakeFile 3
+//由于大小不合适而造成的失败
+#define SmartFiler_ErrorNum_MakeFile_ErrorSize 3
+
+#define SmartFiler_ErrorNum_Max_DecToBit 3
+#define SmartFiler_ErrorNum_Max_HexToBit 3
+
+#define SmartFiler_ErrorNum_Max_StringToValue_Base 6
+
+
+
+//针对16进制
+#define bitArrayMaxLen 64
+#define decArrayMaxLen 45
+#define hexArrayMaxLen 16
+
+#define bitArrayMaxLen_Half 32
+#define hexArrayMaxLen_Half 8
 
 
 typedef unsigned int Smart_Flag_Type;
-
 
 
 class SmartFiler
@@ -58,7 +75,11 @@ public:
 	}
 
 	bool closeFile();
+
+	static uChar stringToValue(std::string str,uSmartSizeType &secCount,uSmartSizeType &secOffset);
 	
+	static uChar makeFile(std::string filePath,uSmartSizeType secCount,uSmartSizeType secOffset,uChar igError = 0);
+
 	~SmartFiler();
 private:
 	HANDLE hFile;

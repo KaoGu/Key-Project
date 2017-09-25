@@ -8,8 +8,8 @@ class DealInfoClass;
 
 #define DealFile_ErrorNum_Max_KeyData 2
 #define DealFile_ErrorNum_Max_UnKeyData 2
-#define DealFile_ErrorNum_Max_CodeFile (5 + DealFile_ErrorNum_Max_KeyData + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile)
-#define DealFile_ErrorNum_Max_UnCodeFile (3 + DealFile_ErrorNum_Max_UnKeyData + SmartFiler_ErrorNum_Max_OpenFile)
+#define DealFile_ErrorNum_Max_CodeFile (5 + DealFile_ErrorNum_Max_KeyData + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile)
+#define DealFile_ErrorNum_Max_UnCodeFile (3 + DealFile_ErrorNum_Max_UnKeyData + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile)
 #define DealFile_ErrorNum_Max_CheckFile (1 + SmartFiler_ErrorNum_Max_OpenFile)
 #define DealFile_ErrorNum_Max_DestroyFile (1 + SmartFiler_ErrorNum_Max_OpenFile)
 

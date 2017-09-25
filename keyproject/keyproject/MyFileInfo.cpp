@@ -118,7 +118,7 @@ bool MyFileInfo::quickCreatePath( std::string path )
 
 	while(!path.empty())
 	{
-		logDebug("¼ì²â");
+		logDebug("¼ì²â%s\n",GetStringAddress(path));
 		if (MyFileInfo::isFolderExits(path))
 		{
 			if (MyFileInfo::IsDirectory(path.c_str()))

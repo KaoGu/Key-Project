@@ -11,13 +11,21 @@ class AnalyticParameter;
 class ParaData{
 public:
 
-	ParaData(AnalyticParameter &analyPara);
+	ParaData()
+		:modelType(UNDEFINE_MODEL),
+		srcFlag(All_False_Flag)
+	{
+	}
+
+	void showHelp();
+
+	void findModel(AnalyticParameter &analyPara);
+
 
 	MODEL_TYPE modelType;
 
 	uChar key[256];
 
-	SHOW_TYPE showType;
 		
 
 	//ÐÂ³ÉÔ±
@@ -26,7 +34,6 @@ public:
 	TypeClass<PathPair>::List pathList;
 
 private:
-	void showHelp();
 	void initByteKey(uChar key[256]);
 };
 

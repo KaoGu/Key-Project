@@ -6,20 +6,11 @@ using namespace std;
 
 
 
-ParaData::ParaData( AnalyticParameter &analyPara ) :
-	modelType(UNDEFINE_MODEL),
-	showType(NO_SHOW_NAME),
-	srcFlag(All_False_Flag)
+void ParaData::findModel( AnalyticParameter &analyPara )
 {
-	do 
+	do
 	{
 		int index = 0 ;
-
-		if (analyPara.findArg("-help")>=0)
-		{
-			this->showHelp();
-			return;
-		}
 
 		do
 		{
@@ -32,10 +23,11 @@ ParaData::ParaData( AnalyticParameter &analyPara ) :
 				break;
 			}
 
-			index = analyPara.findArg("-check_model");
+			index = analyPara.findArg("-fill_model");
 			if (index>=0)
 			{
-				this->modelType = CHECK_MODEL;
+				this->modelType = FILL_MODEL;
+				srcFlag = All_False_Flag;
 				break;
 			}
 
@@ -44,7 +36,7 @@ ParaData::ParaData( AnalyticParameter &analyPara ) :
 			{
 				this->modelType = CODE_MODE;
 				srcFlag = To_New_Path_Flag;
-				break;																			
+				break;
 			}
 
 			index = analyPara.findArg("-uncode_model");
@@ -67,25 +59,26 @@ ParaData::ParaData( AnalyticParameter &analyPara ) :
 			this->srcFlag = index ;
 		}
 
-		index = analyPara.getArgValue("-show_type") ;
+		index = analyPara.findArg("-check");
 		if (index>=0)
 		{
-			this->showType = (SHOW_TYPE)index ;
+			this->srcFlag = Check_Flag + (this->srcFlag&To_New_Path_Flag);
 		}
 
+		logDebug("srcflag = %d\n",this->srcFlag);
 
 		{//初始化pathList
-
 			string desPath ;
-			if (this->srcFlag&To_New_Path_Flag)
+			if ((this->srcFlag&(To_New_Path_Flag|Check_Flag))==To_New_Path_Flag)
 			{
+				logDebug("检测目标路径\n");
 				index = analyPara.findArg("-despath") + 1 ;
-				if ( index>0 )
+				if ( (index>0)&&(index<analyPara.getArgCount()) )
 				{//包含加密路径
 					desPath = analyPara.getArg(index);					
 					if (false==MyFileInfo::quickCreatePath(desPath))
 					{
-						logError("目标路径\"%s\"存在问题",
+						logError("目标路径\"%s\"存在问题\n",
 							GetStringAddress(desPath));
 						break;
 					}
@@ -97,10 +90,14 @@ ParaData::ParaData( AnalyticParameter &analyPara ) :
 			int jndex = analyPara.getArgCount();
 			if ( (index<=0)||(index>=jndex) )
 			{
-				this->modelType = UNDEFINE_MODEL;
+//				this->modelType = UNDEFINE_MODEL;
 				break;
 			}
 
+			if (this->srcFlag&Check_Flag)
+			{
+				desPath = "?";
+			}
 			while(index<jndex)
 			{
 				PathPair *p = new PathPair ;
@@ -159,29 +156,37 @@ aksdjfiq;ojfia;siodufj;qfjiaj;fkas\
 			}
 		}
 		memcpy(this->key,tmpKey,sizeof(this->key)/sizeof(this->key[0]));
-
 	} while (0);
 }
 
 void ParaData::showHelp()
 {
-	logDebug("\
+	logOut("\
+		  \n\
+		  LOGPATH\n\
 		  \n\
 		  CODE_MODE\n\
 		  UNCODE_MODEL\n\
-		  CHECK_MODEL\n\
 		  DESTROY_MODEL\n\
-		  FILE\n\
+		  FILL_MODEL\n\
+		  MKFILE path size\n\
 		  \n\
-		  typedef enum\n\
+		  SRCFLAG\n\
 		  {\n\
-		  NO_SHOW_NAME = 0,\n\
-		  SHOW_NAME,\n\
-		  ONLY_SHOW_NAME	\n\
-		  }SHOW_TYPE;\n\
+			All_False_Flag\n\
+			Destroy_File_Flag\n\
+			Rename_File_Flag\n\
+			Rename_Folder_Flag\n\
+			To_New_Path_Flag\n\
+			Check_Flag\n\
+		  }\n\
+		  \n\
+		  CHECK\n\
 		  \n\
 		  uChar key[256];\n\
 		  \n\
+		  DESPATH\n\
+		  SRCPATH\n\
 		  ");
 }
 

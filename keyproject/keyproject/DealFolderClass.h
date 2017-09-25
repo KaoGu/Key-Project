@@ -9,7 +9,7 @@
 #define DealFolder_ErrorNum_Max_RenameFolder2Arg 1
 #define DealFolder_ErrorNum_Max_RenameFolder3Arg 2
 #define DealFolder_ErrorNum_Max_CreatFolder 2
-#define DealFolder_ErrorNum_Max_CodeFolder (2 + SmartFiler_ErrorNum_Max_OpenFile)
+#define DealFolder_ErrorNum_Max_CodeFolder (2 + SmartFiler_ErrorNum_Max_OpenFile + SmartFiler_ErrorNum_Max_MakeFile)
 
 
 class NameSelector;

@@ -18,7 +18,7 @@ DealClass::DealClass( ParaData *paraData ) :paraData(paraData),
 	isDestroyFile(paraData->srcFlag&Destroy_File_Flag),
 	isRenameFile(paraData->srcFlag&Rename_File_Flag),
 	isRenameFolder(paraData->srcFlag&Rename_Folder_Flag),
-	isToNewPath(paraData->srcFlag&To_New_Path_Flag)
+	isCheck(paraData->srcFlag&Check_Flag)
 {
 }
 
@@ -94,6 +94,10 @@ int DealClass::dealFilesInNewPath(
 	std::string iterSrcPath,std::string iterDesPath
 	)
 {
+	logFile("新路径下处理\n");
+
+	bool isFindFolderMark = true;
+
 	PathStruct* p = NULL;
 	PathStruct* q = NULL;
 	uChar errorNum = 0 ;
@@ -116,12 +120,19 @@ int DealClass::dealFilesInNewPath(
 //				break;
 				if (paraData->modelType==CODE_MODE)
 				{
-					errorNum = dealFileObj.codeFile(
-						iterSrcPath+currentPath->bufFirst,
-						currentPath->bufFirst,
-						iterDesPath,
-						&desNameSelector
-						);
+					if (isCheck)
+					{
+						errorNum = dealFileObj.checkFile(iterSrcPath+currentPath->bufFirst);
+					}
+					else
+					{
+						errorNum = dealFileObj.codeFile(
+							iterSrcPath+currentPath->bufFirst,
+							currentPath->bufFirst,
+							iterDesPath,
+							&desNameSelector
+							);
+					}
 				}
 				else if (paraData->modelType==UNCODE_MODEL)
 				{
@@ -131,13 +142,40 @@ int DealClass::dealFilesInNewPath(
 						iterSrcPath+currentPath->bufFirst,
 						&desFolderPathStruct
 						);
-					if (errorNum==0)
-					{
-						iterDesPath = desFolderPathStruct.bufFirst ;
+					if (errorNum<8)
+					{						
+						if (errorNum==1)
+						{
+							logFile("解码出文件夹，由\"%s\"更新===>\"%s\"\n",
+								GetStringAddress(iterDesPath),
+								GetStringAddress(desFolderPathStruct.bufFirst));
+							iterDesPath = desFolderPathStruct.bufFirst ;
+							if (isFindFolderMark)
+							{
+								logWarn("文件夹下发现多个标志文件\n");
+							}
+							else
+							{
+								isFindFolderMark = true ;
+							}
+						}
+						else
+							if (errorNum==2)
+							{
+								logFile("解码出来的文件名为\"%s\"\n",
+									GetStringAddress(desFolderPathStruct.bufFirst)
+									);
+							}
+							else
+							{
+								logError("发生不一致情况，请检查代码\n");
+							}
+						errorNum = 0 ;
 					}
 				}
 				else
 				{
+					errorNum = 0 ;
 					logError("暂不支持\n");
 				}
 
@@ -165,32 +203,45 @@ int DealClass::dealFilesInNewPath(
 			{
 				logFile("处理文件夹\"%s\"\n",GetStringAddress(currentPath->bufFirst));
 				//对于加密的情况将文件夹的相关信息存储起来
-				errorNum = dealFolderObj.creatFolder(iterDesPath,&desNameSelector);
-				if (errorNum==0)
+				if (false==isCheck)
 				{
-					p = collector.popFrontNode();
-					p->buf_type = NEW_DES_PATH;
-					p->bufFirst = iterDesPath + desNameSelector.numString + "\\";
-					pathList.pushBackNode(p);
-
-					if (paraData->modelType==CODE_MODE)
+					errorNum = dealFolderObj.creatFolder(iterDesPath,&desNameSelector);
+					if (errorNum==0)
 					{
-						//在目标区域创建文件夹，在文件夹下创建相应的标志文件，将数据信息写入文件
-						errorNum = dealFolderObj.codeFoder(p->bufFirst,currentPath->bufFirst);
-						if (errorNum)
+						p = collector.popFrontNode();
+						p->buf_type = NEW_DES_PATH;
+						p->bufFirst = iterDesPath + desNameSelector.numString + "\\";
+						pathList.pushBackNode(p);
+
+						if (paraData->modelType==CODE_MODE)
 						{
-							logError("对于源文件夹名\"%s\"在文件夹\"%s\"下进行标记失败：%u\n",
-								GetStringAddress(currentPath->bufFirst),
-								GetStringAddress(p->bufFirst),
-								errorNum
-								);
+							//在目标区域创建文件夹，在文件夹下创建相应的标志文件，将数据信息写入文件
+							errorNum = dealFolderObj.codeFoder(p->bufFirst,currentPath->bufFirst);
+							if (errorNum)
+							{
+								logError("对于源文件夹名\"%s\"在文件夹\"%s\"下进行标记失败：%u\n",
+									GetStringAddress(currentPath->bufFirst),
+									GetStringAddress(p->bufFirst),
+									errorNum
+									);
+							}
 						}
+					}
+					else
+					{
+						logError("目标文件夹\"%s\"下创建任意新文件夹失败,加密后的文件路径会有问题\n",
+							GetStringAddress(iterDesPath));
 					}
 				}
 				else
 				{
-					logError("目标文件夹\"%s\"下创建任意新文件夹失败,加密后的文件路径会有问题\n",
-						GetStringAddress(iterDesPath));
+					if (paraData->modelType==UNCODE_MODEL)
+					{
+						p = collector.popFrontNode();
+						p->buf_type = NEW_DES_PATH;
+						p->bufFirst = iterDesPath + "?\\";
+						pathList.pushBackNode(p);
+					}
 				}
 
 				if (isRenameFolder)
@@ -224,6 +275,18 @@ int DealClass::dealFilesInNewPath(
 				//int index = currentPath->bufFirst.find_first_of('\?');
 				//iterSrcPath = currentPath->bufFirst.substr(0,index) ;
 				//iterDesPath = currentPath->bufFirst.substr(index+1,currentPath->bufFirst.length());
+				if (UNCODE_MODEL==paraData->modelType)
+				{
+					if (isFindFolderMark==false)
+					{
+						logWarn("并未在源文件夹\"%s\"下找到标志文件\n",
+							GetStringAddress(iterSrcPath));
+					}
+					else
+					{
+						isFindFolderMark = false;
+					}
+				}
 				iterSrcPath = currentPath->bufFirst ;
 				logFile("源文件夹进入\"%s\"\n",GetStringAddress(iterSrcPath));
 				srcNameSelector.clearNumString();
@@ -244,8 +307,11 @@ int DealClass::dealFilesInNewPath(
 }
 
 //folderpath为 ..\\..\\的形式
+//收集时先收集文件再收集文件夹
 void DealClass::collectFilesInFolder( std::string folderPath)
 {
+	TypeClass<PathStruct>::List folderList;
+
 	PathStruct* p = NULL ;
 	_finddata_t fileInfo;
 	long handle = _findfirst(string(folderPath + "*").c_str(), &fileInfo);
@@ -260,8 +326,8 @@ void DealClass::collectFilesInFolder( std::string folderPath)
 					p = collector.popFrontNode();
 					p->buf_type = FOLDER_TYPE ;
 					p->bufFirst = fileInfo.name ;
-					pathList.pushBackNode(p);
-					assert(p!=testPointer);
+					folderList.pushBackNode(p);
+//					pathList.pushBackNode(p);
 				}
 			}
 			else
@@ -274,67 +340,91 @@ void DealClass::collectFilesInFolder( std::string folderPath)
 		}while(_findnext(handle, &fileInfo) == 0);
 	}
 	_findclose(handle);
+	pathList.pushBackList(folderList);
 }
 
 int DealClass::dealFiles( PathPair* pathPair )
 {
-	string srcRoad = pathPair->srcPath;
-	string iterSrcPath;
-	string iterSrcName;
-
-	bool isFolder = MyFileInfo::IsDirectory(srcRoad.data());
-	if (!isFolder)
+	uChar errorNum = 0 ;	
+	do 
 	{
-		if (!MyFileInfo::isFileExits(srcRoad))
+		string srcRoad = pathPair->srcPath;
+
+		bool isFolder = MyFileInfo::IsDirectory(srcRoad.data());
+		if (!isFolder)
 		{
-			logError("文件\"%s\"不存在\n",GetStringAddress(srcRoad));
-			return 0;
+			if (!MyFileInfo::isFileExits(srcRoad))
+			{
+				logError("文件\"%s\"不存在\n",GetStringAddress(srcRoad));
+				errorNum = 1 ;
+				break;
+			}
 		}
-	}
 
-	size_t pos =  srcRoad.find_last_of('\\') + 1 ;
-	iterSrcPath = srcRoad.substr(0,pos);
-	iterSrcName = srcRoad.substr(pos,srcRoad.length());
-
-	if (iterSrcName.empty()||iterSrcPath.empty())
-	{
-		logError("路径无文件名\n");
-		return 0 ;
-	}
-
-	logFile("从处理\"%s\"开始，isFolder:%d\n",GetStringAddress(iterSrcPath),isFolder);
-
-
-	PathStruct* p = collector.popFrontNode() ;
-	if (isFolder)
-	{
-		p->buf_type = FOLDER_TYPE ;
-	}
-	else
-	{
-		p->buf_type = FILE_TYPE;
-	}
-	p->bufFirst = iterSrcName ;
-	pathList.pushBackNode(p);
-
-	this->test("0015");	
-
-	if (isToNewPath)
-	{
-		if (pathPair->desPath.empty())
+		if (paraData->modelType==FILL_MODEL)
 		{
-			this->dealFilesInNewPath(iterSrcPath,iterSrcPath);
+            logFile("文件-填充\n");
+			if (isFolder==false)
+			{
+				errorNum = 2 ;
+				logError("路径不是一个文件夹\n");
+				break;
+			}
+			this->fillFolder(srcRoad+"\\");
+			break;
+		}
+
+		size_t pos =  srcRoad.find_last_of('\\') + 1 ;
+		string iterSrcPath = srcRoad.substr(0,pos);
+		string iterSrcName = srcRoad.substr(pos,srcRoad.length());
+
+		if (iterSrcName.empty()||iterSrcPath.empty())
+		{
+			logError("路径无文件名\n");
+			errorNum = 3 ;
+			break;
+		}
+
+		logFile("从处理\"%s\"开始，isFolder:%d\n",GetStringAddress(iterSrcPath),isFolder);
+
+		PathStruct* p = collector.popFrontNode() ;
+		if (isFolder)
+		{
+			p->buf_type = FOLDER_TYPE ;
 		}
 		else
 		{
-			this->dealFilesInNewPath(iterSrcPath,pathPair->desPath+"\\");
+			p->buf_type = FILE_TYPE;
 		}
-	}
-	else
-	{
-		this->dealFilesInSamePath(iterSrcPath);
-	}
-	return 0 ;
+		p->bufFirst = iterSrcName ;
+		pathList.pushBackNode(p);
+
+
+		if ((paraData->modelType==CODE_MODE)
+			||(paraData->modelType==UNCODE_MODEL))
+		{
+            logFile("文件-加解密\n");
+			if (pathPair->desPath.empty())
+			{
+				this->dealFilesInNewPath(iterSrcPath,iterSrcPath);
+			}
+			else
+			{
+				this->dealFilesInNewPath(iterSrcPath,pathPair->desPath+"\\");
+			}
+			break;
+		}
+
+		if (paraData->modelType==DESTROY_MODEL)
+		{
+            logFile("文件-摧毁\n");
+			this->dealFilesInSamePath(iterSrcPath);
+			break;
+		}
+		errorNum = 4 ;
+        logError("文件-未识别处理方法\n");        
+	} while (0);
+	return errorNum ;
 }
 
 int DealClass::dealFilesInSamePath(std::string iterSrcPath )
@@ -342,6 +432,8 @@ int DealClass::dealFilesInSamePath(std::string iterSrcPath )
 	uChar errorNum = 0 ;
 	PathStruct* currentPath = NULL ;
 	PathStruct* p = NULL ;
+
+	logFile("原路径下处理\n");
 
 //	logError("%s\n",GetStringAddress(iterSrcPath));
 
@@ -372,14 +464,14 @@ int DealClass::dealFilesInSamePath(std::string iterSrcPath )
 					}
 				}
 
+				if (this->isCheck)
+				{
+					errorNum = dealFileObj.checkFile(iterSrcPath+currentPath->bufFirst);
+				}
+				else
 				if (isDestroyFile)
 				{
 					errorNum = dealFileObj.destroyFile(iterSrcPath + currentPath->bufFirst);
-				}
-				else
-				if (this->paraData->modelType==CHECK_MODEL)
-				{
-					errorNum = dealFileObj.checkFile(iterSrcPath+currentPath->bufFirst);
 				}
 				else
 				{
@@ -442,6 +534,7 @@ int DealClass::dealFilesInSamePath(std::string iterSrcPath )
 }
 
 
+//1表示文件夹2表示文件，其它表示异常,8以下用来预留表示正常情况
 uChar DealClass::unCodeFile(
 	string srcFilePath,
 	PathStruct* desFolderPath
@@ -454,47 +547,61 @@ uChar DealClass::unCodeFile(
 		errorNum = smartFiler.openFile(srcFilePath,Smart_Read_Flag) ;
 		if (errorNum)
 		{
+			errorNum += 8;
 			logError("打开文件\"%s\"失败:%d\n",GetStringAddress(srcFilePath),errorNum);
 			break;
 		}
 		if ((smartFiler.getFileSectionOffset()==0)
 			&&(smartFiler.getFileSectionCount()==0))
 		{
+			logError("文件的\"%s\"大小为0\n",
+				GetStringAddress(srcFilePath));
+			errorNum = 9 + SmartFiler_ErrorNum_Max_OpenFile ;
 			break;
 		}
 		if (false==smartFiler.getNexSection(Tailer_Max_Bytes_Size,true))
 		{
 			logError("映射文件\"%s\"失败\n",GetStringAddress(srcFilePath));
-			errorNum = 1 + SmartFiler_ErrorNum_Max_OpenFile ;
+			errorNum = 10 + SmartFiler_ErrorNum_Max_OpenFile ;
 			break;
 		}
 		dealInfoObj.dealByte2Info(smartFiler.getSectionAddress(),smartFiler.getSectionSize());
 //		smartFiler.closeFile();
 		if (0==tailerObj.getInfoSize())
 		{
-			logError("不可识别文件\"%s\"\n",GetStringAddress(srcFilePath));
-			errorNum = 2 + SmartFiler_ErrorNum_Max_OpenFile ;
+			logError("未编码文件或版本不对或密码不对\"%s\"\n",GetStringAddress(srcFilePath));
+			errorNum = 11 + SmartFiler_ErrorNum_Max_OpenFile ;
 			break;
 		}
 
 		if (dealFolderObj.isFolderMark())
 		{
+			logFile("解码出的文件夹名\"%s\"\n",
+				(tailerObj.getInfoAddress()+Folder_Header_Length));
+
 			std::string oldName = desFolderPath->bufFirst.substr(0,desFolderPath->bufFirst.length()-1);
 			string::size_type index = oldName.find_last_of('\\');
 			if (index==string::npos)
 			{
 				logError("目标路径\"%s\"为不可重命名路径\n",
 					GetStringAddress(desFolderPath->bufFirst));
-				errorNum = 3 + SmartFiler_ErrorNum_Max_OpenFile ;
+				errorNum = 12 + SmartFiler_ErrorNum_Max_OpenFile ;
 				break;
 			}
 			std::string newName = oldName.substr(0,index+1)+
 				std::string(tailerObj.getInfoAddress()+Folder_Header_Length);
 
+			if (isCheck)
+			{
+				desFolderPath->bufFirst = newName + "\\";
+				errorNum = 1 ;
+				break;
+			}
 
 			if (0==dealFolderObj.renameFolder(oldName,newName))
 			{
 				desFolderPath->bufFirst = newName + "\\" ;
+				errorNum = 1 ;
 				break;
 			}
 			NameSelector tmpSelector;
@@ -505,15 +612,28 @@ uChar DealClass::unCodeFile(
 				logError("目标路径\"%s\"重命名\"%s_*\"失败:%u\n",
 					GetStringAddress(desFolderPath->bufFirst),
 					GetStringAddress(newName),errorNum);
-				errorNum = 4 + SmartFiler_ErrorNum_Max_OpenFile ;
+				errorNum = errorNum + 13 + SmartFiler_ErrorNum_Max_OpenFile ;
 				break;
 			}
+
 			desFolderPath->bufFirst = newName + tmpSelector.numString + "\\";			
+			errorNum = 1 ;
+
 //			dealFolderObj.renameFolder();
 			break;
 		}
 		if (dealFileObj.isFileMark())
 		{
+			logFile("解码出的文件名\"%s\"\n",
+				(tailerObj.getInfoAddress()+File_Header_Length));
+
+			if (isCheck)
+			{
+				desFolderPath->bufFirst = std::string(tailerObj.getInfoAddress()+File_Header_Length);
+				errorNum = 2 ;
+				break;
+			}
+
 			string name = desFolderPath->bufFirst +
 				std::string(tailerObj.getInfoAddress()+File_Header_Length);
 
@@ -523,13 +643,14 @@ uChar DealClass::unCodeFile(
 				string::size_type index = name.find_last_of('.');
 				if (index==string::npos)
 				{
+					name = name + "_";
 					if (false==tmpSelector.getNextNumString(
 						MyFileInfo::isFileExits,
 						name)
 						)
 					{
 						logError("无扩展名的文件取名失败\n");
-						errorNum = 5 + SmartFiler_ErrorNum_Max_OpenFile ;
+						errorNum = 14 + DealFolder_ErrorNum_Max_RenameFolder3Arg + SmartFiler_ErrorNum_Max_OpenFile ;
 						break;
 					}
 					name = name + tmpSelector.numString ;
@@ -546,7 +667,7 @@ uChar DealClass::unCodeFile(
 						)
 					{
 						logError("有扩展名的文件取名失败\n");
-						errorNum = 6 + SmartFiler_ErrorNum_Max_OpenFile ;
+						errorNum = 15 + DealFolder_ErrorNum_Max_RenameFolder3Arg + SmartFiler_ErrorNum_Max_OpenFile ;
 						break;
 					}
 					name = name + tmpSelector.numString + ext ;
@@ -556,11 +677,79 @@ uChar DealClass::unCodeFile(
 			errorNum = dealFileObj.unCodeFile(&smartFiler,name);
 			if (errorNum)
 			{
-				errorNum += (7 + SmartFiler_ErrorNum_Max_OpenFile) ;
+				errorNum = 15 + errorNum + DealFolder_ErrorNum_Max_RenameFolder3Arg + SmartFiler_ErrorNum_Max_OpenFile ;
 				break;
 			}
+			desFolderPath->bufFirst = name ;
+			errorNum = 2 ;
 			break;
 		}
+		logError("编码文件头被修改为不可识别\n");
+		errorNum  = 8 ;
 	} while (0);
 	return errorNum;
+}
+
+uChar DealClass::fillFolder( string folderPath )
+{
+	uChar errorNum = 0 ;
+	logDebug("处理文件夹\"%s\"\n",GetStringAddress(folderPath));
+	uSmartSizeType secCount = 1<<31 ;
+	uSmartSizeType secOffset = 0 ;
+
+	desNameSelector.clearNumString();
+
+	while(1)
+	{
+		if (errorNum==0)
+		{
+			if (false==desNameSelector.getNextNumString(
+				MyFileInfo::isFileExits,folderPath))
+			{
+				logError("无法取名，造成错误\n");
+				errorNum = 1 ;
+				break;
+			}
+		}
+
+//			logDebug("%s\n",GetStringAddress(desNameSelector.numString));
+
+		errorNum = SmartFiler::makeFile(folderPath+desNameSelector.numString,
+			secCount,secOffset,SmartFiler_ErrorNum_MakeFile_ErrorSize);
+		if (errorNum)
+		{
+			if(errorNum!=SmartFiler_ErrorNum_Max_MakeFile)
+			{
+				errorNum = 0 ;
+				break;
+			}
+		}
+
+		if (secCount)
+		{
+			secCount>>=1;
+			if (secCount==0)
+			{
+				secOffset = 1<<(Smart_Section_Cell_Low-1) ;
+			}
+		}
+		else
+			if (secOffset)
+			{
+				secOffset>>=1;
+				if (secOffset==0)
+				{
+					errorNum = 0 ;
+					break;
+				}
+				continue;
+			}
+			else
+			{
+				errorNum = 3 ;
+				break;
+			}
+	}
+
+	return errorNum ;
 }

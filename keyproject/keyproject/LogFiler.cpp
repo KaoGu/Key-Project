@@ -30,7 +30,6 @@ LogFiler::~LogFiler(void)
 
 void _cdecl LogFiler::Out(int level,char* format,... )
 {
-
 /*
 	// 1: 首先在函数里定义一具va_list型的变量，这个变量是指向参数的指针
 	va_list arg_ptr;
